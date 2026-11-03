@@ -3,5 +3,5 @@
 version = 4
 
 [[package]]
-name = "transfer_verify_scorer"
+name = "transfer_verify_comparator"
 version = "0.1.0"

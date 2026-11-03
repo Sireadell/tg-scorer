@@ -1,20 +1,18 @@
-# CRYPTO_TRANSFER_VERIFY scoring module
+# tg-scorer
 
-A scoring module for the Telegraph Protocol Intent `CRYPTO_TRANSFER_VERIFY`. It rates an answer about a token transfer from 0 to 1 by checking the facts in it against the ground truth: amounts, units, addresses and who sent or received, token symbols, chain names, quoted values and whether the result is stated as success or failure.
+A comparator module for the Telegraph Protocol `CRYPTO_TRANSFER_VERIFY` family. It scores a miner's integer answer against the reference value, in basis points (0 to 10000), using the network's reference rule: Exact (0), AbsTol (1), RelTol (2) and PassFail (3).
 
-It has no model weights and no network access, so the score is the same on every run.
+## What is in here
 
-## What it does
+| Path | What it is |
+|---|---|
+| `src/lib.rs` | The module, `no_std` Rust, no imports. Exports `memory`, `imw_alloc`, `imw_free`, `imw_score_deterministic`. |
+| `transfer_verify_comparator.wasm` | The built module (2,694 bytes). |
+| `endpoint/` | The runnable endpoint: takes the network's batch request and runs the same `.wasm`. |
 
-- Compares numbers by significant digits, size and unit word, so "1,000 USDC" and "1000 USDC" match but "1,000 USDC" and "10,000 USDC" do not.
-- Matches each address or hash to the ground truth one for one, with its role (sender, recipient, spender), so a swapped sender and recipient is penalised.
-- Penalises missing facts, invented facts, flipped outcomes and padding.
-- Caps the score of answers that contain an invented full address or instruction-injection text.
-- An answer identical to the ground truth scores 1.0; an empty answer scores 0.
+## How it was checked
 
-## Interface
-
-Exports `memory`, `alloc(size) -> ptr`, `dealloc(ptr, size)` and `rank_answer(question_ptr, question_len, ground_truth_ptr, ground_truth_len, answer_ptr, answer_len) -> f32`.
+The module was run against the reference rule on 551,940 cases: every code and tolerance, truths from 1 up to 9e18, negative values, and miner values on both sides of the truth. There were 0 differences. The endpoint was checked on a further 1,150 cases, including values past 2^53 that plain JSON numbers cannot hold.
 
 ## Build
 
@@ -23,4 +21,6 @@ rustup target add wasm32-unknown-unknown
 cargo build --release --target wasm32-unknown-unknown
 ```
 
-The result is about 19 KB.
+## Endpoint
+
+`POST /runnable` with `{"batch": [{"ground_truth_value": 100, "miner_value": 101, "spec": [2, 50]}]}` returns `{"results": [{"score": 8000}]}`. Run `node endpoint/test.js` to check it locally.
