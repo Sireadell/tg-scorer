@@ -37,7 +37,7 @@ function readBody(req) {
 
 module.exports = async (req, res) => {
   res.setHeader('Content-Type', 'application/json');
-  if (req.method === 'GET') return res.status(200).end(JSON.stringify({ ok: true, module: 'CRYPTO_TRANSFER_VERIFY comparator', batch: 'POST {"batch":[...]}' }));
+  if (req.method === 'GET') return res.status(200).end(JSON.stringify({ ok: true, module: 'comparator', intent: (String(req.url || '').split('?')[0].split('/')[2] || null), batch: 'POST {"batch":[...]}' }));
   if (req.method !== 'POST') return res.status(405).end(JSON.stringify({ error: 'POST only' }));
   let body;
   try {
