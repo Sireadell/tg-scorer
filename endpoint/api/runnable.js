@@ -26,8 +26,7 @@ function toI64(v) {
 
 function readBody(req) {
   return new Promise((resolve, reject) => {
-    if (typeof req.body === 'string') return resolve(req.body);
-    if (req.body && typeof req.body === 'object' && !Buffer.isBuffer(req.body)) return resolve(JSON.stringify(req.body));
+    // Never touch req.body: Vercel parses it lazily and JSON.parse rounds 19-digit integers.
     const chunks = [];
     req.on('data', (c) => chunks.push(c));
     req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
@@ -35,7 +34,7 @@ function readBody(req) {
   });
 }
 
-module.exports = async (req, res) => {
+const handler = async (req, res) => {
   res.setHeader('Content-Type', 'application/json');
   if (req.method === 'GET') return res.status(200).end(JSON.stringify({ ok: true, module: 'comparator', intent: (String(req.url || '').split('?')[0].split('/')[2] || null), batch: 'POST {"batch":[...]}' }));
   if (req.method !== 'POST') return res.status(405).end(JSON.stringify({ error: 'POST only' }));
@@ -67,3 +66,4 @@ module.exports = async (req, res) => {
   });
   res.status(200).end(JSON.stringify({ results }));
 };
+module.exports = Object.assign(handler, { config: { api: { bodyParser: false } } });
